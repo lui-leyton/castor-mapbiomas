@@ -2,239 +2,145 @@
 
 # 🦫 Castor en Magallanes
 
-**Detección de impacto de *Castor canadensis* por teledetección en Tierra del Fuego**
+**Visor web del impacto de *Castor canadensis* en Tierra del Fuego**
 
-Un detector satelital calibrado contra verdad de terreno, un visor web para explorarlo,
-y un cuaderno de laboratorio que registra tanto lo que funcionó como lo que no.
+Sitio estático que publica 806 diques y 241 polígonos de impacto digitalizados
+sobre la comuna de Timaukel, con la cobertura de suelo de fondo y una serie NDVI comparable.
 
 <br>
 
-![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)
-![Earth Engine](https://img.shields.io/badge/Google_Earth_Engine-API-4285F4?logo=googleearth&logoColor=white)
-![MapLibre](https://img.shields.io/badge/MapLibre_GL-visor-395B8A?logo=maplibre&logoColor=white)
+![MapLibre](https://img.shields.io/badge/MapLibre_GL-vendorizado-395B8A?logo=maplibre&logoColor=white)
+![H3](https://img.shields.io/badge/H3-agregaci%C3%B3n_hexagonal-6C3FBF)
 ![Cloudflare Pages](https://img.shields.io/badge/Cloudflare_Pages-despliegue-F38020?logo=cloudflare&logoColor=white)
-![Estado](https://img.shields.io/badge/estado-validaci%C3%B3n_cerrada-orange)
+![Sin build](https://img.shields.io/badge/build-ninguno-success)
+![Peso](https://img.shields.io/badge/peso-27_MB-informational)
 
 <br>
 
-<img src="docs/imagenes/visor-hexagonos.jpg" alt="Visor web mostrando los diques agregados en hexágonos sobre la cobertura de MapBiomas" width="100%">
+<img src="visor-hexagonos.jpg" alt="Visor mostrando los diques agregados en hexágonos sobre la cobertura de MapBiomas" width="100%">
 
 </div>
 
 ---
 
-## Qué es esto
+## Qué es
 
-En 1946 se soltaron **20 castores norteamericanos (10 parejas)** en Tierra del Fuego para fomentar
-la industria peletera. No tienen depredadores en el hemisferio sur. Hoy se estiman entre
-**70.000 y 110.000 individuos** y unas **23.000 ha** de bosque nativo invadido.
-<sub>(Universidad de Chile / Proyecto GEF Castor, Ministerio del Medio Ambiente)</sub>
+Una web de una sola página, sin backend, sin servidor de tiles y sin build. Todo lo que
+muestra está precalculado: GeoJSON, PNG y un `metricas.json` que el navegador lee directo.
+Se publica abriendo la carpeta con cualquier servidor estático.
 
-Este repositorio contiene el intento de responder dos preguntas con imágenes satelitales:
-
-| | Pregunta | Producto |
-|:--|:--|:--|
-| **Q1** | ¿Hay castores aquí? | Capa de candidatos con score de confianza |
-| **Q2** | ¿Cuándo llegaron? | Ráster de primer año de detección |
-
-Todo está calibrado contra **806 diques y 241 polígonos de impacto digitalizados en terreno**
-sobre 130,67 km² de la comuna de Timaukel.
+El ámbito es deliberadamente estrecho: **la comuna de Timaukel**, en Tierra del Fuego. El área
+con datos digitalizados son 130,67 km², un **0,94 %** de los 13.945 km² de la comuna. El sitio
+lo dice explícitamente, para que nadie lea el recuadro vacío como ausencia de castores.
 
 ---
 
-## El resultado, sin adornos
+## Qué muestra
 
-> **El detector funciona dentro de una escena. No funciona entre escenas.**
+### El mapa
 
-<table>
-<tr><td width="50%" valign="top">
+Cinco capas conmutables sobre un fondo de cobertura de suelo:
 
-### ✅ Lo que funciona
+| Capa | Qué es |
+|:--|:--|
+| **Cobertura** | MapBiomas Chile Col. 2, año 2024, en dos escalas: la comuna completa y el área de estudio a mayor resolución |
+| **Impacto** | 241 polígonos, 2.039 ha, el **15,6 %** del área de estudio |
+| **Diques** | 806 puntos, 6,17 por km² |
+| **Timaukel** | Límite comunal (OpenStreetMap, ODbL) |
+| **Sitios** | Recuadros del área de estudio y sus sectores |
 
-- **F1 = 0,603** en un hold-out espacial ciego
-  (Sector B, nunca usado para ajustar nada)
-- **15–20×** de separación contra un control
-  negativo a 1.500 km del frente de invasión
-- Transfiere a otro paisaje (Isla Navarino)
-- La firma espectral es real y medible
+**Agregación progresiva con H3.** Ochocientos puntos juntos son una mancha, así que los diques
+se relevan por zoom. Cada hexágono lleva su conteo y se desvanece al acercarse al corte, para
+que el polígono de impacto asome antes del cambio de nivel:
 
-</td><td width="50%" valign="top">
-
-### ❌ Lo que no funciona
-
-- El nivel absoluto **no es comparable entre años**:
-  varía hasta **4,5×** donde el impacto real no cambió
-- Tres formulaciones del índice, tres rechazos:
-  **0,603 → 0,502 → 0,473**
-- El archivo Landsat tiene un hueco de **10 años**
-  (1987–1996) que impide datar la llegada
-
-</td></tr>
-</table>
-
-**El diagnóstico.** Los tres intentos revelan una tensión estructural, no un problema de
-parámetros: un índice estable entre años debe promediar observaciones, y promediar borra el
-detalle espacial que la detección necesita. El impacto mediano son **1,97 ha** —unos 200
-píxeles de Sentinel-2— y no sobrevive al suavizado.
-
-**El hallazgo de fondo.** El modelo conceptual del que partió el proyecto —*el castor crea agua
-nueva persistente, detectable por índices de agua*— **no describe lo observado**. Tres
-mediciones independientes lo contradicen. La firma real es de **biomasa seca y abierta**: SWIR
-alto, NBR bajo, y una trayectoria de cobertura **Bosque → Matorral → Estepa**.
-
-📄 El informe completo está en **[`docs/INFORME.pdf`](docs/INFORME.pdf)** (15 páginas).
-El cuaderno de laboratorio, con los 22 hallazgos y los errores propios incluidos, en
-**[`docs/hallazgos_fase1.md`](docs/hallazgos_fase1.md)**.
-
----
-
-## El visor
-
-Un sitio estático, sin servidor de tiles y sin llamadas a Earth Engine en tiempo de petición:
-todo se precalcula en el batch y se publica como GeoJSON y PNG versionados.
+| Zoom | Qué se dibuja | Celdas | Mediana |
+|:--|:--|--:|--:|
+| ≤ 11,6 | Hexágonos H3 res 7 (~5,2 km²) | 37 | 14 diques |
+| 11,6 – 13,2 | Hexágonos H3 res 8 (~0,74 km²) | 144 | 4 diques |
+| ≥ 13,2 | Diques individuales | 806 | — |
 
 <div align="center">
-<img src="docs/imagenes/visor-diques.jpg" alt="Visor al nivel de dique individual" width="85%">
+<img src="visor-diques.jpg" alt="El visor al nivel de dique individual" width="85%">
 </div>
 
-**Agregación progresiva con H3.** A 806 puntos juntos no se lee nada, así que los diques se
-agregan en hexágonos que se relevan por zoom:
+### Comparar fechas
 
-| Zoom | Capa | Celdas |
-|:--|:--|:--|
-| ≤ 11,6 | Hexágonos H3 res 7 (~5,2 km²) | 37 |
-| 11,6 – 13,2 | Hexágonos H3 res 8 (~0,74 km²) | 144 |
-| ≥ 13,2 | Diques individuales | 806 |
+Cuatro paneles NDVI sincronizados —**2017-11-06, 2018-11-28, 2022-03-10 y 2025-04-03**— que se
+mueven juntos. Las cuatro fechas se eligieron por tener entre 97 % y 100 % de píxeles
+despejados, y comparten una escala fija (0,20–0,90) para que el color signifique lo mismo en
+los cuatro paneles.
 
-**Lo demás que incluye:**
+### El panel lateral
 
-- Fondo de **cobertura MapBiomas Chile Col. 2** (1999–2024) recortado a la comuna
-- Visor de **4 paneles NDVI sincronizados** (2017, 2018, 2022, 2025)
-- Trayectoria de cobertura dentro del impacto: el bosque cae de **59 % a 9 %** entre 1999 y 2018
-- Separabilidad espectral medida (AUC) de nueve índices
-- Láminas cartográficas de **CIREN · Ministerio de Agricultura** descargables en PDF
+Además de la introducción sobre los bosques de *Nothofagus* y las ilustraciones del
+comportamiento del castor, el panel publica lo que se midió sobre estos datos:
+
+- **Separación entre diques** — mediana de **55,7 m**. A 10 m de píxel los diques vecinos son
+  inseparables: la unidad detectable es el complejo de lagunas, no el dique.
+- **Trayectoria de cobertura, 1999–2024** — dentro del impacto el bosque cae de **59,2 % a
+  8,8 %** hacia 2018, con dos caídas separadas (2005, y 2011–2014). En el resto del paisaje, en
+  el mismo período, solo baja de 52,4 % a 38,7 %.
+- **Enriquecimiento por clase, 2018** — matorral ×3,78 y estepa ×6,56 dentro del impacto. Pero
+  **humedal queda depletado (×0,20)**, no enriquecido: el fondo del paisaje ya es 40 % humedal
+  natural, así que aquí clasificar algo como humedal lo hace *menos* probable de ser castor.
+- **Firma espectral (AUC)** — nueve índices ordenados por separabilidad. Mandan el SWIR
+  (B12, 0,785) y el NBR (0,237, invertido); **MNDWI, el índice de agua, es el peor de los
+  nueve**. La firma es biomasa seca y abierta, no agua.
+- **Archivo Landsat** — escenas utilizables por año entre 1985 y 2024, con **diez años sin
+  dato** por falta de estación receptora en el extremo austral.
+- **El problema en cifras** — contexto nacional, señalado como tal porque no son mediciones de
+  estos datos.
+
+### Documentos
+
+Tres láminas cartográficas de **CIREN · Ministerio de Agricultura** a escala 1:20.000,
+descargables en PDF. Cada ficha anuncia formato y peso, porque una de ellas son 18,3 MB.
 
 ---
 
 ## Estructura
 
 ```
-castor/
-├── batch/                     # Pipeline. Nada de esto corre en producción.
-│   ├── castor/
-│   │   ├── eeinit.py          # Auth GEE + helpers de colección
-│   │   ├── truth.py           # Ingesta y QA de la verdad de terreno
-│   │   ├── indices.py         # NDVI, NBR, MNDWI, NDWI
-│   │   ├── habitat.py         # Máscara de hábitat (MERIT Hydro + DEM)
-│   │   ├── firma.py           # Separabilidad AUC impacto vs fondo
-│   │   ├── score.py           # Índice compuesto y curva PR
-│   │   ├── holdout.py         # Validación espacial ciega
-│   │   ├── negativo.py        # Control negativo (Chiloé)
-│   │   ├── serie.py           # Serie temporal Landsat 1984–2024
-│   │   └── …                  # 20 módulos en total
-│   ├── exportar_web.py        # GeoJSON + métricas para el visor
-│   ├── exportar_cobertura.py  # Fondo MapBiomas a dos escalas
-│   ├── exportar_hexagonos.py  # Agregación H3 de los diques
-│   ├── exportar_ndvi.py       # Paneles NDVI multitemporales
-│   └── informe_pdf.py         # Markdown → PDF con portada
-│
-├── config/sites.yaml          # Bloque de parámetros ÚNICO y compartido
-│
-├── web/                       # Lo que se sube a Cloudflare Pages
-│   ├── index.html
-│   ├── app.js                 # MapLibre, capas, gráficos SVG
-│   ├── style.css
-│   ├── _headers               # Caché: HTML revalida, assets inmutables
-│   ├── datos/                 # GeoJSON, PNG y metricas.json
-│   └── documentos/            # Láminas CIREN en PDF
-│
-└── docs/
-    ├── INFORME.pdf            # Informe técnico, 15 páginas
-    ├── hallazgos_fase1.md     # Cuaderno de laboratorio, 22 secciones
-    └── SUBIR_A_CLOUDFLARE.md  # Pasos de despliegue
-```
-
----
-
-## Puesta en marcha
-
-```bash
-python -m venv .venv
-.venv\Scripts\activate
-pip install -r requirements.txt
-```
-
-Las credenciales **nunca** viven en el repositorio ni llegan a Cloudflare. `.env` solo guarda
-rutas, y el `.gitignore` lo bloquea como segunda barrera:
-
-```bash
-cp .env.example .env     # apunta a C:\Users\<usuario>\.castor\
-```
-
-Ejecutar cualquier etapa del batch:
-
-```bash
-.venv\Scripts\python.exe -m batch.exportar_hexagonos
-```
-
-El visor se sirve en local sin construir nada:
-
-```bash
-python -m http.server 8799 --directory web
+web/
+├── index.html            # Una sola página
+├── app.js                # MapLibre, capas, gráficos SVG, todo a mano
+├── style.css
+├── _headers              # Caché de Cloudflare Pages
+├── vendor/               # MapLibre GL vendorizado: sin CDN en caliente
+├── datos/
+│   ├── metricas.json     # Todas las cifras del panel
+│   ├── diques.geojson        · 806 puntos
+│   ├── impacto.geojson       · 241 polígonos
+│   ├── hex_grueso.geojson    · 37 celdas H3 res 7
+│   ├── hex_fino.geojson      · 144 celdas H3 res 8
+│   ├── timaukel.geojson      · límite comunal
+│   ├── cobertura/            · PNG de MapBiomas, 2 escalas
+│   └── ndvi/                 · 4 paneles PNG
+└── documentos/           # Láminas CIREN en PDF + miniaturas
 ```
 
 ---
 
 ## Fuentes de datos
 
-| Fuente | Uso |
+| Fuente | Qué aporta al sitio |
 |:--|:--|
-| **Sentinel-2 MSI L2A** · Copernicus | Detección, índices espectrales, NDVI |
-| **Landsat 5/7/8/9 Collection 2** · USGS | Serie temporal 1984–2024, datación |
-| **MapBiomas Chile, Colección 2** | Cobertura y uso de suelo 1999–2024 |
-| **MERIT Hydro** + **Copernicus DEM GLO-30** | Máscara de hábitat (acumulación, HAND, pendiente) |
-| **JRC Global Surface Water** | Descartada: solo 0,8–1,2 % de cobertura útil aquí |
+| **Sentinel-2 MSI L2A** · Copernicus | Paneles NDVI, firma espectral |
+| **Landsat 5/7/8/9 Collection 2** · USGS | Disponibilidad de archivo 1985–2024 |
+| **MapBiomas Chile, Colección 2** | Cobertura de fondo y trayectoria 1999–2024 |
 | **OpenStreetMap** (ODbL) | Límite comunal de Timaukel |
 | **CIREN · Ministerio de Agricultura** | Láminas cartográficas 1:20.000 |
+| **CARTO** | Estilo base y glyphs del mapa |
 
----
-
-## Algunos hallazgos que vale la pena leer
-
-Varios son resultados negativos, y están documentados con el mismo detalle que los positivos.
-
-- **§3 — El impacto de castor no se ve como agua.** MNDWI, el índice de agua, resultó ser el
-  *peor* discriminador de los nueve evaluados.
-- **§4 — MapBiomas confirma la trayectoria.** Bosque → Matorral → Estepa. Y «humedal» queda
-  **depletado** (0,20×), no enriquecido: en este paisaje el fondo ya es 40 % humedal natural,
-  así que clasificar algo como humedal lo hace *menos* probable de ser castor.
-- **§10 — Hueco de diez años en Landsat** (1987–1996): escenas que nunca se adquirieron por
-  falta de estación receptora en el extremo austral.
-- **§12 — JRC Global Surface Water es inutilizable aquí**, y con eso se retira una conclusión
-  que estuvo a punto de publicarse.
-- **§16 — Navarino no era el problema de nubosidad; Chiloé sí.**
-- **§22 — El patrón de los tres intentos es el verdadero hallazgo:** la detección de objetos
-  se degrada de forma monótona con el promediado, mientras la discriminación entre sitios
-  mejora. Los criterios pre-registrados pedían a un solo índice dos trabajos incompatibles.
-
----
-
-## Estado
-
-El proyecto está **detenido tras la fase de validación**. El detector no superó los criterios
-de aceptación fijados *antes* de correr las pruebas, y esos criterios no se movieron después
-para hacerlo pasar. La propuesta de arquitectura en dos etapas que sale del diagnóstico queda
-documentada en el informe, sin implementar.
-
-El visor web sí está terminado y operativo.
+La verdad de terreno —806 diques y 241 polígonos— está digitalizada sobre Tierra del Fuego.
+Las superficies salen de la geometría, no del campo `Ha` del archivo original.
 
 ---
 
 <div align="center">
 <sub>
 
-Datos de terreno digitalizados en Tierra del Fuego · Comuna de Timaukel, Región de Magallanes
-y de la Antártica Chilena, Chile
+Comuna de Timaukel · Región de Magallanes y de la Antártica Chilena, Chile
 
 </sub>
 </div>
